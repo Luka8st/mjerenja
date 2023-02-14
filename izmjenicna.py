@@ -9,7 +9,9 @@ task = nidaqmx.Task()
 
 # Add a voltage channel to the task
 task.ai_channels.add_ai_voltage_chan("cDAQ9185-1F56937Mod2/ai0")
-task.ai_channels.add_ai_voltage_chan("cDAQ9185-1F56937Mod1/ai0")
+#task.ai_channels.add_ai_voltage_chan("cDAQ9185-1F56937Mod1/ai0")
+task.ai_channels.add_ai_voltage_chan("cDAQ9185-1F56937Mod2/ai1")
+task.ai_channels.add_ai_voltage_chan("cDAQ9185-1F56937Mod2/ai2")
 
 
 signal_freq = 50
@@ -41,9 +43,12 @@ def phase_difference(voltage, current):
 
     # Calculate the cross power spectral density (CPSD)
     CPSD = np.sum(voltage * np.conj(current))/len(voltage)
+    #print(f'cpsd={CPSD}')
     
     # Calculate the phase difference in radians
-    phase_diff = np.angle(CPSD)
+    #phase_diff = np.angle(CPSD)
+    phase_diff = np.deg2rad(CPSD)
+    #print(f'phase={phase_diff/np.pi} pi')
     
     return phase_diff
 
@@ -54,6 +59,17 @@ def convert(list):
     print(returnList)
     return returnList
 
+def subtract(list1, list2):
+    returnList = []
+
+    print(len(list1))
+
+    for i in range(samples_per_ch):
+        returnList.append(list1[i] - list2[i])
+    print(returnList)
+    return returnList
+
+
 voltage_data = []
 current_data = []
 
@@ -61,9 +77,13 @@ current_data = []
 while True:
     task.start()
 
-    voltage, currentVoltage = task.read(number_of_samples_per_channel=samples_per_ch)
+    voltage, currentVoltage1, currentVoltage2 = task.read(number_of_samples_per_channel=samples_per_ch)
+
+    currentVoltage = subtract(currentVoltage1, currentVoltage2)
 
     current = convert(currentVoltage)
+    print(f'voltage:{voltage}')
+    print(f'currentV:{currentVoltage}')
     voltage_data.extend(voltage)
     current_data.extend(current)
 
